@@ -39,7 +39,7 @@ def prob_interp(unigrams, bigrams, phrase, smooth = 0, l1 = 0, l2 = 1):
 
     return l1 * pr_u + l2 * pr_b
 
-def perplexity(corpus, uni, bi, smooth = 0):
+def perplexity(corpus, uni, bi, smooth = 0, l1 = 0, l2 = 1):
     
     t = time.time()
     uni_test, bi_test = generate_un_and_big(corpus)
@@ -48,7 +48,7 @@ def perplexity(corpus, uni, bi, smooth = 0):
     add = 0
     x = time.time()
     for bigram in bi_test:
-        add += -math.log(prob_bigram(uni, bi, bigram, smooth = smooth))
+        add += -math.log(prob_interp(uni, bi, bigram, smooth, l1, l2))
     print('len of bitest: ' + str(len(bi_test)))
     perp = math.exp(add / len(bi_test.keys()))
     print('time for loop: ' + str(time.time() - x))
