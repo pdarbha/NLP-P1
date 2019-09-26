@@ -33,11 +33,14 @@ def prob_bigram(unigrams, bigrams, bigram, smooth=0):
     return bigprob/prob_unigram(unigrams, words[0], smooth)
 
 def perplexity(corpus, uni, bi, smooth = 0):
-    sum = 0
-    for bigram in bi:
-        sum += -math.log(prob_bigram(uni, bi, bigram, smooth = smooth)
-    sum = math.exp(sum / len(bi.keys()))
-    return sum
+    
+    uni_test, bi_test = generate_un_and_big(corpus)
+
+    add = 0
+    for bigram in bi_test:
+        add += -math.log(prob_bigram(uni, bi, bigram, smooth = smooth))
+    perp = math.exp(add / len(bi_test.keys()))
+    return perp
 
 
 decUn, decBig = generate_un_and_big('deceptive.txt')
@@ -50,3 +53,6 @@ print(sorted(trBig.items(), key = lambda x: x[1])[-10:])
 
 print(prob_unigram(decUn, 'the'))
 print(prob_bigram(decUn, decBig, 'and I'))
+
+print(perplexity('../validation/deceptive.txt', decUn, decBig, 1))
+print(perplexity('../validation/deceptive.txt', trUn, trBig, 1))
