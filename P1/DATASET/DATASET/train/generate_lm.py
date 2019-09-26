@@ -1,3 +1,5 @@
+import math
+
 def generate_un_and_big(text):
     un = {}
     big = {}
@@ -30,7 +32,12 @@ def prob_bigram(unigrams, bigrams, bigram, smooth=0):
         bigprob += bigrams[bigram]/(sum(bigrams.values()) + smooth*len(bigrams.keys()))
     return bigprob/prob_unigram(unigrams, words[0], smooth)
 
-
+def perplexity(corpus, uni, bi, smooth = 0):
+    sum = 0
+    for bigram in bi:
+        sum += -math.log(prob_bigram(uni, bi, bigram, smooth = smooth)
+    sum = math.exp(sum / len(bi.keys()))
+    return sum
 
 
 decUn, decBig = generate_un_and_big('deceptive.txt')
