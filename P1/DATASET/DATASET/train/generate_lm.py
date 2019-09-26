@@ -12,6 +12,8 @@ def generate_un_and_big(text):
                     un[token] += 1
                 else:
                     un[token] = 1
+                if i == 0:
+                    big['<s> '+token] = 1
                 if i < len(tokens) - 1:
                     s = token + " " + tokens[i+1]
                     if s in big:
