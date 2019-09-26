@@ -1,4 +1,5 @@
 import math
+import time
 
 def generate_un_and_big(text):
     un = {}
@@ -32,14 +33,25 @@ def prob_bigram(unigrams, bigrams, bigram, smooth=0):
         bigprob += bigrams[bigram]/(sum(bigrams.values()) + smooth*len(bigrams.keys()))
     return bigprob/prob_unigram(unigrams, words[0], smooth)
 
+def prob_interp(unigrams, bigrams, phrase, smooth = 0, l1 = 0, l2 = 1):
+    pr_u = prob_unigram(unigrams, phrase.split(" ")[1], smooth)
+    pr_b = prob_bigram(unigrams, bigrams, phrase, smooth)
+
+    return l1 * pr_u + l2 * pr_b
+
 def perplexity(corpus, uni, bi, smooth = 0):
     
+    t = time.time()
     uni_test, bi_test = generate_un_and_big(corpus)
+    print('time for file to be parsed: ' + str(time.time() - t))
 
     add = 0
+    x = time.time()
     for bigram in bi_test:
         add += -math.log(prob_bigram(uni, bi, bigram, smooth = smooth))
+    print('len of bitest: ' + str(len(bi_test)))
     perp = math.exp(add / len(bi_test.keys()))
+    print('time for loop: ' + str(time.time() - x))
     return perp
 
 
@@ -54,5 +66,8 @@ print(sorted(trBig.items(), key = lambda x: x[1])[-10:])
 print(prob_unigram(decUn, 'the'))
 print(prob_bigram(decUn, decBig, 'and I'))
 
-print(perplexity('../validation/deceptive.txt', decUn, decBig, 1))
-print(perplexity('../validation/deceptive.txt', trUn, trBig, 1))
+#print(perplexity('../validation/deceptive.txt', decUn, decBig, 1))
+#print(perplexity('../validation/deceptive.txt', trUn, trBig, 1))
+
+print(prob_unigram(decUn, 'I'))
+print(prob_interp(decUn, decBig, 'and I', 0, 0.5, 0.5))
