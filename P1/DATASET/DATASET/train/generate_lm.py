@@ -77,12 +77,12 @@ trUn, trBig = generate_un_and_big('truthful.txt')
 import pandas as pd
 df = pd.DataFrame(columns=['smooth', 'l1', 'truth_acc', 'dec_acc'])
 #for s in range(1,4):
-for i in range(6):
+for i in range(1,11):
     # truth_acc = 0
     # dec_acc = 0
-    smooth = 0.1#float(s)/10.0
-    l1 = 0.95 + float(i)/100.0
-    l2 = 1-l1
+    smooth = float(i)/100.0
+    l1 = 1#0.95 + float(i)/100.0
+    l2 = 0#1-l1
     row = {}
     row['smooth'] = smooth
     row['l1'] = l1
@@ -105,4 +105,5 @@ for i in range(6):
 # print(perplexity('../validation/deceptive.txt', trUn, trBig, 1))
 # print(perplexity('../validation/truthful.txt', decUn, decBig, 1))
 # print(perplexity('../validation/truthful.txt', trUn, trBig, 1))
+
 
