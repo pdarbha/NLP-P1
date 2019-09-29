@@ -1,5 +1,13 @@
-import math
 
+import math
+import pandas as pd
+import numpy as np
+from sklearn.feature_extraction import DictVectorizer
+from sklearn.naive_bayes import MultinomialNB
+import nltk
+#nltk.download('averaged_perceptron_tagger')
+
+# generate unigram and bigram counts for entire review
 def generate_un_and_big(text):
     un = {}
     big = {}
@@ -21,6 +29,7 @@ def generate_un_and_big(text):
                         big[s] = 1
     return un, big
 
+# generate unigram and bigram counts for each review
 def generate_un_and_big_from_line(line):
     un = {}
     big = {}
@@ -40,27 +49,34 @@ def generate_un_and_big_from_line(line):
                 big[s] = 1
     return un, big
 
+'''
+Calculates probabilities for Language Model Based Classification
+'''
+
+# calculates unigram probability using smoothing parameter
 def prob_unigram(grams, unigram, smooth=0):
     if unigram in grams:
         return (grams[unigram] + smooth)/(sum(grams.values()) + smooth*len(grams.keys()))
     else:
         return smooth/(sum(grams.values()) + smooth*len(grams.keys()))
 
+# calculatets bigram probability using smoothing parameter
 def prob_bigram(unigrams, bigrams, bigram, smooth=0):
     words = bigram.split(" ")
-    bigprob = smooth/(sum(bigrams.values()) + smooth*len(bigrams.keys()))
+    bi_prob = smooth/(sum(bigrams.values()) + smooth*len(bigrams.keys()))
     if bigram in bigrams:
-        bigprob += bigrams[bigram]/(sum(bigrams.values()) + smooth*len(bigrams.keys()))
-    return bigprob/prob_unigram(unigrams, words[0], smooth)
+        bi_prob += bigrams[bigram]/(sum(bigrams.values()) + smooth*len(bigrams.keys()))
+    return bi_prob/prob_unigram(unigrams, words[0], smooth)
 
+# calculates probability using interpolation of bigrams and unigrams
 def prob_interp(unigrams, bigrams, phrase, smooth = 0, l1 = 0, l2 = 1):
     pr_u = prob_unigram(unigrams, phrase.split(" ")[1], smooth)
     pr_b = prob_bigram(unigrams, bigrams, phrase, smooth)
 
     return l1 * pr_u + l2 * pr_b
 
+# calculatets perplexity
 def perplexity(corpus, uni, bi, smooth = 0, l1 = 0, l2 = 1):
-    
     bi_test = generate_un_and_big_from_line(corpus)[1]
 
     add = 0
@@ -69,12 +85,12 @@ def perplexity(corpus, uni, bi, smooth = 0, l1 = 0, l2 = 1):
     perp = math.exp(add / len(bi_test.keys()))
     return perp
 
-
+'''
+Trying out our functions above. Hyperparameter tuning.
+'''
 # decUn, decBig = generate_un_and_big('deceptive.txt')
 # trUn, trBig = generate_un_and_big('truthful.txt')
 
-
-import pandas as pd
 # df = pd.DataFrame(columns=['smooth', 'l1', 'truth_acc', 'dec_acc'])
 # #for s in range(1,4):
 # for i in range(1,11):
@@ -107,6 +123,7 @@ import pandas as pd
 # print(perplexity('../validation/truthful.txt', trUn, trBig, 1))
 
 
+# using training corpus and hyperparameters gotten from tuning on validation set, make predictions on test set
 def generate_results(decUn, decBig, trUn, trBig):
     import pandas as pd
     df = pd.DataFrame(columns=['Id', 'Prediction'])
@@ -123,14 +140,13 @@ def generate_results(decUn, decBig, trUn, trBig):
 
 #generate_results(decUn, decBig, trUn, trBig)
 
-import numpy as np
-from sklearn.feature_extraction import DictVectorizer
-from sklearn.naive_bayes import MultinomialNB
-import nltk
-#nltk.download('averaged_perceptron_tagger')
-
+'''
+Naive Bayes code. Using part-of-speech as an extra feature. 
+'''
 pos = ['FW','JJ','LS','NNP','PDT','RB','UH']
 
+# creates bag of unigrams and bag of bigrams, as well as part of speech counts (weighted)
+# creates vector representation for model
 def generate_bow(truthful, deceptive):
     vec = DictVectorizer()
     bow = []
@@ -164,17 +180,20 @@ def generate_bow(truthful, deceptive):
     v = { word:i for i, word in enumerate(vec.get_feature_names()) }
     return X, y, v
 
+# train a multinomial naive bayes model using the vector representation
 def train_model(X, y, alpha):
     clf = MultinomialNB(alpha = alpha)
     clf.fit(X, y)
     return clf
 
+# get number of lines in a file
 def text_lines(text):
     with open(text) as file:
         for i, line in enumerate(file):
             pass
-        return i+1 
+        return i + 1 
 
+# using the naive bayes model, predict class (deceptive of truthful) 
 def predict_val(text, clf, feature_names):
     with open(text) as file:
         bow = np.zeros((text_lines(text), len(feature_names)))
@@ -192,13 +211,17 @@ def predict_val(text, clf, feature_names):
                     bow[i, feature_names[tag]]+=0.01
         return clf.predict(bow)
 
-X, y, v = generate_bow('truthful.txt', 'deceptive.txt')
-clf = train_model(X, y, 0.4)
-# for i in range(1, 10):
-#     clf = train_model(X, y, float(i)/10.0)
-#     print(sum(predict_val('../validation/truthful.txt', clf, v)), 128 - sum(predict_val('../validation/deceptive.txt', clf, v)))
-predictions = predict_val('../test/test.txt', clf, v)
-pd.DataFrame(predictions).to_csv('nb_results2.csv')            
+'''
+Using above code to train and predict using Naive Bayes model.
+'''
+
+#X, y, v = generate_bow('truthful.txt', 'deceptive.txt')
+#clf = train_model(X, y, 0.4)
+## for i in range(1, 10):
+##     clf = train_model(X, y, float(i)/10.0)
+##     print(sum(predict_val('../validation/truthful.txt', clf, v)), 128 - sum(predict_val('../validation/deceptive.txt', clf, v)))
+#predictions = predict_val('../test/test.txt', clf, v)
+#pd.DataFrame(predictions).to_csv('nb_results2.csv')            
 
 
 
