@@ -75,7 +75,7 @@ def prob_interp(unigrams, bigrams, phrase, smooth = 0, l1 = 0, l2 = 1):
 
     return l1 * pr_u + l2 * pr_b
 
-# calculatets perplexity
+# calculates perplexity
 def perplexity(corpus, uni, bi, smooth = 0, l1 = 0, l2 = 1):
     bi_test = generate_un_and_big_from_line(corpus)[1]
 
