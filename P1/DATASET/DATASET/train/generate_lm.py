@@ -126,6 +126,10 @@ def generate_results(decUn, decBig, trUn, trBig):
 import numpy as np
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.naive_bayes import MultinomialNB
+import nltk
+#nltk.download('averaged_perceptron_tagger')
+
+pos = ['FW','JJ','LS','NNP','PDT','RB','UH']
 
 def generate_bow(truthful, deceptive):
     vec = DictVectorizer()
@@ -134,11 +138,27 @@ def generate_bow(truthful, deceptive):
     with open(truthful) as file:
         for line in file:
             labels.append(0)
-            bow.append(generate_un_and_big_from_line(line)[0])
+            un, big = generate_un_and_big_from_line(line)
+            tags = nltk.pos_tag(line.split(' '))
+            ptags = dict(zip(pos, [0 for x in pos]))
+            for word, tag in tags:
+                if tag in tags:
+                    ptags[tag] += 0.01
+            un.update(big)
+            un.update(ptags)
+            bow.append(un)
     with open(deceptive) as file:
         for line in file:
             labels.append(1)
-            bow.append(generate_un_and_big_from_line(line)[0])
+            un, big = generate_un_and_big_from_line(line)
+            tags = nltk.pos_tag(line.split(' '))
+            ptags = dict(zip(pos, [0 for x in pos]))
+            for word, tag in tags:
+                if tag in ptags:
+                    ptags[tag] += 0.01
+            un.update(big)
+            un.update(ptags)
+            bow.append(un)
     X = vec.fit_transform(bow).toarray()
     y = np.array(labels)
     v = { word:i for i, word in enumerate(vec.get_feature_names()) }
@@ -159,16 +179,26 @@ def predict_val(text, clf, feature_names):
     with open(text) as file:
         bow = np.zeros((text_lines(text), len(feature_names)))
         for i, line in enumerate(file):
-            bag_of_unigrams = generate_un_and_big_from_line(line)[0]
-            for word in bag_of_unigrams:
+            un, big = generate_un_and_big_from_line(line)
+            for word in un:
                 if word in feature_names:
-                    bow[i, feature_names[word]] = bag_of_unigrams[word]
+                    bow[i, feature_names[word]] = un[word]
+            for word in big:
+                if word in feature_names:
+                    bow[i, feature_names[word]] = big[word]
+            tags = nltk.pos_tag(line.split(' '))
+            for word, tag in tags:
+                if tag in feature_names:
+                    bow[i, feature_names[tag]]+=0.01
         return clf.predict(bow)
 
 X, y, v = generate_bow('truthful.txt', 'deceptive.txt')
-clf = train_model(X, y, 1)
+clf = train_model(X, y, 0.4)
+# for i in range(1, 10):
+#     clf = train_model(X, y, float(i)/10.0)
+#     print(sum(predict_val('../validation/truthful.txt', clf, v)), 128 - sum(predict_val('../validation/deceptive.txt', clf, v)))
 predictions = predict_val('../test/test.txt', clf, v)
-pd.DataFrame(predictions).to_csv('nb_results.csv')            
+pd.DataFrame(predictions).to_csv('nb_results2.csv')            
 
 
 
