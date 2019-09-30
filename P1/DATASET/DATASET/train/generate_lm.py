@@ -5,7 +5,7 @@ import numpy as np
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.naive_bayes import MultinomialNB
 import nltk
-#nltk.download('averaged_perceptron_tagger')
+nltk.download('averaged_perceptron_tagger')
 
 # generate unigram and bigram counts for entire review
 def generate_un_and_big(text):
@@ -233,44 +233,47 @@ def error_analysis(clf, feature_names, decUn, decBig, trUn, trBig):
     wr_de_naive = set()
     for i, p in enumerate(tr_pred):
         if p == 1:
-            wr_tr_naive.add(i)
+            wr_tr_naive.add(i + 1)
     for i, p in enumerate(de_pred):
         if p == 0:
-            wr_de_naive.add(i)
-    print('all wrong truthful naive: ')
-    for x in wr_tr_naive:
-        print(x)
-    print('all wrong deceptive naive: ')
-    for x in wr_de_naive:
-        print(x)
-
+            wr_de_naive.add(i + 1)
+    
     wr_tr_lang = set()
     wr_de_lang = set()
     with open('../validation/truthful.txt') as file:
         for i, line in enumerate(file):
-            if perplexity(line, decUn, decBig, smooth, l1, l2) < perplexity(line, trUn, trBig, smooth, l1, l2):
-                wr_tr_lang.add(i)
+            if perplexity(line, decUn, decBig, 0.1, 0.99, 0.01) < perplexity(line, trUn, trBig, 0.1, 0.99, 0.01):
+                wr_tr_lang.add(i + 1)
     with open('../validation/deceptive.txt') as file:
         for i, line in enumerate(file):
-            if perplexity(line, decUn, decBig, smooth, l1, l2) > perplexity(line, trUn, trBig, smooth, l1, l2):
-                wr_de_lang.add(i)
-    print('all wrong truthful lang: ')
-    for x in wr_tr_lang:
-        print(x)
-    print('all wrong deceptive lang: ')
-    for x in wr_de_lang:
-        print(x)
+            if perplexity(line, decUn, decBig, 0.1, 0.99, 0.01) > perplexity(line, trUn, trBig, 0.1, 0.99, 0.01):
+                wr_de_lang.add(i + 1)
 
     wr_intersect_tr = wr_tr_naive.intersection(wr_tr_lang)
     wr_intersect_de = wr_de_naive.intersection(wr_de_lang)
-    print('truthful intersection: ')
+    print('Truthful intersection: ')
     for x in wr_intersect_tr:
-        print(x)
-    print('deceptive intersecttion: ')
+        print(x, end=',')
+    print('\nDeceptive intersection: ')
     for x in wr_intersect_de:
-        print(x)
+        print(x, end=',')
 
-error_analysis(clf, v, decUn, decBig, trUn, trBig)
+    print('\nUnique truthful Naive Bayes: ')
+    for x in wr_tr_naive:
+        print(x, end=',')
+    print('\nUnique deceptive Naive Bayes: ')
+    for x in wr_de_naive:
+        print(x, end=',')
+
+    print('\nUnique truthful language based: ')
+    for x in wr_tr_lang:
+        print(x, end=',')
+    print('\nUnique deceptive language based: ')
+    for x in wr_de_lang:
+        print(x, end=',')
+
+    
+# error_analysis(clf, v, decUn, decBig, trUn, trBig)
 
 
 
