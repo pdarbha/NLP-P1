@@ -215,15 +215,62 @@ def predict_val(text, clf, feature_names):
 Using above code to train and predict using Naive Bayes model.
 '''
 
-#X, y, v = generate_bow('truthful.txt', 'deceptive.txt')
-#clf = train_model(X, y, 0.4)
+X, y, v = generate_bow('truthful.txt', 'deceptive.txt')
+clf = train_model(X, y, 0.4)
 ## for i in range(1, 10):
 ##     clf = train_model(X, y, float(i)/10.0)
 ##     print(sum(predict_val('../validation/truthful.txt', clf, v)), 128 - sum(predict_val('../validation/deceptive.txt', clf, v)))
 #predictions = predict_val('../test/test.txt', clf, v)
 #pd.DataFrame(predictions).to_csv('nb_results2.csv')            
+decUn, decBig = generate_un_and_big('deceptive.txt')
+trUn, trBig = generate_un_and_big('truthful.txt')
 
+def error_analysis(clf, feature_names, decUn, decBig, trUn, trBig):
+    tr_pred = predict_val('../validation/truthful.txt', clf, feature_names)
+    de_pred = predict_val('../validation/deceptive.txt', clf, feature_names)
+    
+    wr_tr_naive = set()
+    wr_de_naive = set()
+    for i, p in enumerate(tr_pred):
+        if p == 1:
+            wr_tr_naive.add(i)
+    for i, p in enumerate(de_pred):
+        if p == 0:
+            wr_de_naive.add(i)
+    print('all wrong truthful naive: ')
+    for x in wr_tr_naive:
+        print(x)
+    print('all wrong deceptive naive: ')
+    for x in wr_de_naive:
+        print(x)
 
+    wr_tr_lang = set()
+    wr_de_lang = set()
+    with open('../validation/truthful.txt') as file:
+        for i, line in enumerate(file):
+            if perplexity(line, decUn, decBig, smooth, l1, l2) < perplexity(line, trUn, trBig, smooth, l1, l2):
+                wr_tr_lang.add(i)
+    with open('../validation/deceptive.txt') as file:
+        for i, line in enumerate(file):
+            if perplexity(line, decUn, decBig, smooth, l1, l2) > perplexity(line, trUn, trBig, smooth, l1, l2):
+                wr_de_lang.add(i)
+    print('all wrong truthful lang: ')
+    for x in wr_tr_lang:
+        print(x)
+    print('all wrong deceptive lang: ')
+    for x in wr_de_lang:
+        print(x)
+
+    wr_intersect_tr = wr_tr_naive.intersection(wr_tr_lang)
+    wr_intersect_de = wr_de_naive.intersection(wr_de_lang)
+    print('truthful intersection: ')
+    for x in wr_intersect_tr:
+        print(x)
+    print('deceptive intersecttion: ')
+    for x in wr_intersect_de:
+        print(x)
+
+error_analysis(clf, v, decUn, decBig, trUn, trBig)
 
 
 
